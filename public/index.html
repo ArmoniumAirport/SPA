@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Armonium · Prueba del bot</title>
+  <style>
+    :root {
+      --verde: #1f3d34;
+      --verde-claro: #2f5c4e;
+      --crema: #f4f1ea;
+      --gris: #e7e3da;
+      --texto: #21201d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--crema);
+      color: var(--texto);
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .app {
+      width: 100%;
+      max-width: 560px;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: #fff;
+    }
+    header {
+      background: var(--verde);
+      color: #fff;
+      padding: 16px 20px;
+    }
+    header h1 { margin: 0; font-size: 18px; letter-spacing: 0.5px; }
+    header p { margin: 4px 0 0; font-size: 12px; opacity: 0.8; }
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: var(--crema);
+    }
+    .msg {
+      max-width: 82%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 14.5px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .bot { background: #fff; border: 1px solid var(--gris); align-self: flex-start; border-bottom-left-radius: 4px; }
+    .user { background: var(--verde-claro); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .typing { font-style: italic; opacity: 0.7; }
+    form {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      border-top: 1px solid var(--gris);
+      background: #fff;
+    }
+    input {
+      flex: 1;
+      padding: 12px 14px;
+      border: 1px solid var(--gris);
+      border-radius: 22px;
+      font-size: 15px;
+      outline: none;
+    }
+    input:focus { border-color: var(--verde-claro); }
+    button {
+      background: var(--verde);
+      color: #fff;
+      border: none;
+      border-radius: 22px;
+      padding: 0 20px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.5; cursor: default; }
+    .hint { font-size: 11px; color: #7a756c; padding: 6px 14px 10px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Armonium Airport · Asistente</h1>
+      <p>Modo prueba — chateá con el bot antes de conectarlo a WhatsApp</p>
+    </header>
+    <div id="chat"></div>
+    <div class="hint">Ejemplos: "Hola, quiero una pijamada para 4 un sábado" · "Cuánto sale el spa?" · "Pasadía para dos un jueves"</div>
+    <form id="form">
+      <input id="input" placeholder="Escribí tu consulta…" autocomplete="off" />
+      <button id="send" type="submit">Enviar</button>
+    </form>
+  </div>
+
+  <script>
+    const chat = document.getElementById("chat");
+    const form = document.getElementById("form");
+    const input = document.getElementById("input");
+    const sendBtn = document.getElementById("send");
+
+    // Historial que se manda al backend para mantener contexto
+    let history = [];
+
+    function addMsg(text, who) {
+      const div = document.createElement("div");
+      div.className = "msg " + who;
+      div.textContent = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+      return div;
+    }
+
+    // Saludo inicial
+    addMsg("¡Hola! 🌙 Bienvenida/o a Armonium. Contame qué te gustaría organizar (pijamada, pasadía, hospedaje o spa) y para qué fecha.", "bot");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+
+      addMsg(text, "user");
+      input.value = "";
+      sendBtn.disabled = true;
+
+      const typing = addMsg("escribiendo…", "bot");
+      typing.classList.add("typing");
+
+      try {
+        const res = await fetch("/.netlify/functions/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text, history }),
+        });
+        const data = await res.json();
+        typing.remove();
+
+        if (data.error) {
+          addMsg("⚠️ " + data.error, "bot");
+        } else {
+          addMsg(data.reply, "bot");
+          history.push({ role: "user", content: text });
+          history.push({ role: "assistant", content: data.reply });
+          if (history.length > 16) history = history.slice(-16);
+        }
+      } catch (err) {
+        typing.remove();
+        addMsg("⚠️ No pude conectar con el servidor: " + err, "bot");
+      } finally {
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    });
+  </script>
+</body>
+</html>
