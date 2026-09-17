@@ -1,0 +1,14 @@
+# dependencias
+node_modules/
+
+# variables de entorno con secretos (NUNCA subir a GitHub)
+.env
+.env.*
+!.env.example
+
+# Netlify
+.netlify/
+
+# sistema
+.DS_Store
+*.log
