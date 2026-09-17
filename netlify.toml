@@ -1,0 +1,17 @@
+# Configuracion de Netlify
+
+[build]
+  # Carpeta que se publica como sitio web (la pagina de prueba)
+  publish = "public"
+  # Carpeta de las funciones serverless
+  functions = "netlify/functions"
+
+[functions]
+  # Node 18+ trae fetch nativo; no hacen falta dependencias externas
+  node_bundler = "esbuild"
+
+# Redireccion comoda: /webhook -> la funcion de WhatsApp
+[[redirects]]
+  from = "/webhook"
+  to = "/.netlify/functions/whatsapp"
+  status = 200
