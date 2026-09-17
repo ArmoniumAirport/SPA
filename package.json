@@ -1,0 +1,13 @@
+{
+  "name": "armonium-whatsapp-bot",
+  "version": "1.0.0",
+  "description": "Chatbot de atencion de Armonium Airport para WhatsApp Business (Meta Cloud API) con OpenAI, desplegado en Netlify.",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test-prompt": "node scripts/test-local.js"
+  },
+  "license": "UNLICENSED"
+}
